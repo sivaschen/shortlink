@@ -30,7 +30,7 @@ public class UserDO {
     private String mail;
 
 
-    private Long deleteTime;
+    private Long deletionTime;
 
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;

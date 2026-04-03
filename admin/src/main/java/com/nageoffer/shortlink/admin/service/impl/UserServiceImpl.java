@@ -46,13 +46,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
-    public Boolean hasUsername(String username) {
+    public Boolean userNameUsable(String username) {
         return !userRegisterCachePenetrationBloomFilter.contains(username);
     }
 
     @Override
     public void register(UserRegisterReqDTO requestParam){
-        if (!hasUsername(requestParam.getUsername())){
+        if (!userNameUsable(requestParam.getUsername())){
             throw new ClientException(UserErrorCodeEnums.USER_NAME_EXIST);
         }
         RLock rLock = redissonClient.getLock(LOCK_USER_REGISTER_KEY + requestParam.getUsername());
