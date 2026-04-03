@@ -9,7 +9,7 @@ public interface UserService extends IService<UserDO> {
 
     UserRespDTO getUserByUsername(String username);
 
-    Boolean hasUsername(String username);
+    Boolean userNameAvailable(String username);
 
     void register(UserRegisterReqDTO requestParam);
 

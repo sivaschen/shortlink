@@ -27,9 +27,9 @@ public class UserController {
         return Results.success(BeanUtil.toBean(userService.getUserByUsername(username), UserActualRespDTO.class));
     }
 
-    @GetMapping("/api/short-link/v1/user/hasusername")
+    @GetMapping("/api/short-link/v1/user/username_available")
     public Result<Boolean> hasUserName(@RequestParam("username") String username) {
-        return Results.success(userService.hasUsername(username));
+        return Results.success(userService.userNameAvailable(username));
     }
 
 
