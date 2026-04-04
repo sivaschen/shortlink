@@ -3,6 +3,7 @@ package com.nageoffer.shortlink.admin.dao.entity;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.nageoffer.shortlink.admin.common.database.BaseDO;
 import lombok.Data;
 
 import java.util.Date;
@@ -10,7 +11,7 @@ import java.util.Date;
 
 @Data
 @TableName("t_user")
-public class UserDO {
+public class UserDO extends BaseDO {
 
     private Long id;
 
@@ -32,13 +33,5 @@ public class UserDO {
 
     private Long deletionTime;
 
-    @TableField(fill = FieldFill.INSERT)
-    private Date createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private Date updateTime;
-
-    @TableField(fill = FieldFill.INSERT)
-    private Integer delFlag;
 
 }
