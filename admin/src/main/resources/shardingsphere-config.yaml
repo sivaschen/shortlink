@@ -3,7 +3,7 @@ dataSources:
   ds_0:
     dataSourceClassName: com.zaxxer.hikari.HikariDataSource
     driverClassName: com.mysql.cj.jdbc.Driver
-    jdbcUrl: jdbc:mysql://127.0.0.1:3306/link?useUnicode=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    jdbcUrl: jdbc:mysql://100.121.24.3:3306/link?useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai
     username: root
     password: 123456
 
@@ -31,5 +31,21 @@ rules:
         props:
           sharding-count: 16
 # 展现逻辑 SQL & 真实 SQL
+  - !ENCRYPT
+    tables:
+      t_user:
+        columns:
+          phone:
+            cipherColumn: phone
+            encryptorName: common_encryptor
+          mail:
+            cipherColumn: mail
+            encryptorName: common_encryptor
+        queryWithCipherColumn:  true
+    encryptors:
+      common_encryptor:
+        type: AES
+        props:
+          aes-key-value:  d6oadClrrb9A3GWo
 props:
   sql-show: true

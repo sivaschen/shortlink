@@ -6,8 +6,10 @@ spring:
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
     # ShardingSphere 配置文件路径
     url: jdbc:shardingsphere:classpath:shardingsphere-config.yaml
-data:
-  redis:
-    host:127.0.0.1
-    port:6379
-    password:123456
+  data:
+    redis:
+      host: 100.121.24.3
+      port: 6379
+      password: cc0510701
+
+
