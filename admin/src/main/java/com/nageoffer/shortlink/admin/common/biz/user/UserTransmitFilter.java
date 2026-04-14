@@ -36,8 +36,8 @@ public class UserTransmitFilter implements Filter {
     private final StringRedisTemplate stringRedisTemplate;
 
 
-    private static final List<String> IGNORE_URI = Lists.newArrayList("/api/short-link/v1/user/login", "/api/short-link/v1/user/username_available",
-            "/api/short-link/v1/user/register");
+    private static final List<String> IGNORE_URI = Lists.newArrayList("/api/short-link/admin/v1/user/login", "/api/short-link/admin/v1/user/username_available",
+            "/api/short-link/admin/v1/user/register");
     @SneakyThrows
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
