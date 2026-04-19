@@ -5,15 +5,16 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nageoffer.shortlink.project.common.convention.result.Result;
 import com.nageoffer.shortlink.project.common.convention.result.Results;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkCreateReqDTO;
+import com.nageoffer.shortlink.project.dto.req.ShortlinkGroupCountQueryReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkPageReqDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkCreateRespDTO;
+import com.nageoffer.shortlink.project.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkPageRespDTO;
 import com.nageoffer.shortlink.project.service.ShortlinkService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,5 +31,13 @@ public class ShortlinkController {
     public Result<IPage<ShortlinkPageRespDTO>> pageShortLink(ShortlinkPageReqDTO requestParam) {
 
         return Results.success(shortlinkService.pageShorlink(requestParam));
+    }
+
+    @GetMapping("/api/short-link/v1/group_count")
+    public Result<List<ShortlinkGroupCountQueryRespDTO>> group_link_count(@RequestParam("requestParam") List<String> requestParam) {
+
+
+        return Results.success(shortlinkService.groupLinkCount(requestParam));
+
     }
 }

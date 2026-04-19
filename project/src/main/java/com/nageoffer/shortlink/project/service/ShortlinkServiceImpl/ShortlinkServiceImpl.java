@@ -2,6 +2,7 @@ package com.nageoffer.shortlink.project.service.ShortlinkServiceImpl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,8 +11,10 @@ import com.nageoffer.shortlink.project.config.RBloomFilterConfiguration;
 import com.nageoffer.shortlink.project.dao.entity.ShortlinkDO;
 import com.nageoffer.shortlink.project.dao.mapper.ShortlinkMapper;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkCreateReqDTO;
+import com.nageoffer.shortlink.project.dto.req.ShortlinkGroupCountQueryReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkPageReqDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkCreateRespDTO;
+import com.nageoffer.shortlink.project.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkPageRespDTO;
 import com.nageoffer.shortlink.project.service.ShortlinkService;
 import com.nageoffer.shortlink.project.toolkit.HashUtil;
@@ -21,12 +24,16 @@ import org.redisson.api.RBloomFilter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, ShortlinkDO> implements ShortlinkService {
     private final RBloomFilter<String> shortUrlCreateCachePenetrationBloomFilter;
+    private final ShortlinkMapper shortlinkMapper;
 
     @Override
     public ShortlinkCreateRespDTO createShortlink(ShortlinkCreateReqDTO reqDTO) {
@@ -73,6 +80,8 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
         return resultPage.convert(item -> BeanUtil.toBean(item, ShortlinkPageRespDTO.class));
     }
 
+
+
     private String generateSuffix(ShortlinkCreateReqDTO reqDTO){
         int generateCount = 0;
         String originalUrl = reqDTO.getOriginUrl();
@@ -93,5 +102,18 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
         }
 
         return shortUrl;
+    };
+
+    @Override
+    public List<ShortlinkGroupCountQueryRespDTO> groupLinkCount(List<String> requestParam) {
+        QueryWrapper<ShortlinkDO> queryWrapper = Wrappers.query(new ShortlinkDO())
+                .select("gid as gid, count(*) as shortlinkCount")
+                .in("gid", requestParam)
+                .eq("enable_status", 0)
+                .groupBy("gid");
+
+        List<Map<String,Object>> shortlinkDOList = baseMapper.selectMaps(queryWrapper);
+
+        return BeanUtil.copyToList(shortlinkDOList, ShortlinkGroupCountQueryRespDTO.class);
     }
 }
