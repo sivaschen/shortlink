@@ -7,28 +7,31 @@ import com.nageoffer.shortlink.admin.remote.dto.ShortlinkRemoteService;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkPageReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkCreateRespDTO;
+import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkPageRespDTO;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
 
 public class ShortlinkController {
 
-
+    ShortlinkRemoteService shortlinkRemoteService = new ShortlinkRemoteService(){};
 
     @GetMapping("/api/short-link/admin/v1/page")
     public Result<IPage<ShortlinkPageRespDTO>> pageShortLink(ShortlinkPageReqDTO requestParam) {
-        ShortlinkRemoteService shortlinkRemoteService = new ShortlinkRemoteService(){};
         return (shortlinkRemoteService.pageShortLink(requestParam));
     }
 
     @PostMapping("/api/short-link/admin/v1/create")
     public Result<ShortlinkCreateRespDTO> createShortlink(@RequestBody ShortlinkCreateReqDTO requestParam) {
-        ShortlinkRemoteService shortlinkRemoteService = new ShortlinkRemoteService(){};
         return shortlinkRemoteService.createShortlink(requestParam);
+    }
+
+    @GetMapping("/api/short-link/admin/v1/group_count")
+    public Result<List<ShortlinkGroupCountQueryRespDTO>> groupCount(@RequestParam List<String> requestParam) {
+        return shortlinkRemoteService.listGroupCount(requestParam);
     }
 }
