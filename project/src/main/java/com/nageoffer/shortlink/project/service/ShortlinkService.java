@@ -10,7 +10,10 @@ import com.nageoffer.shortlink.project.dto.req.ShortlinkUpdateReqDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkCreateRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkPageRespDTO;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface ShortlinkService extends IService<ShortlinkDO> {
@@ -19,4 +22,6 @@ public interface ShortlinkService extends IService<ShortlinkDO> {
     public void updateShortlink(ShortlinkUpdateReqDTO reqDTO);
     IPage<ShortlinkPageRespDTO> pageShorlink(ShortlinkPageReqDTO requestParam);
     List<ShortlinkGroupCountQueryRespDTO> groupLinkCount(List<String> requestParam);
+
+    public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException;
 }

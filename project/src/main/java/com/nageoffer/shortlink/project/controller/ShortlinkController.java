@@ -12,15 +12,23 @@ import com.nageoffer.shortlink.project.dto.resp.ShortlinkCreateRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkPageRespDTO;
 import com.nageoffer.shortlink.project.service.ShortlinkService;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
 public class ShortlinkController {
     private final ShortlinkService shortlinkService;
+
+    @GetMapping("/{short-uri}")
+    public void restoreUri(@PathVariable("short-uri") String shortUri, ServletRequest request, ServletResponse response) throws IOException {
+        shortlinkService.restoreUrl(shortUri,request,response);
+    }
 
     @PostMapping("/api/short-link/v1/create")
     public Result<ShortlinkCreateRespDTO> createShortlink(@RequestBody ShortlinkCreateReqDTO requestParam) {
