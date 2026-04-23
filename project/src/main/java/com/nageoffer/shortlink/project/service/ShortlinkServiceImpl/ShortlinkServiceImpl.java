@@ -169,12 +169,15 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
         boolean contains = shortUrlCreateCachePenetrationBloomFilter.contains(fullShortUrl);
 
         if(!contains){
+            ((HttpServletResponse) response).sendRedirect("/page/notfound");
+
             return;
         };
 
         String isNullStr = stringRedisTemplate.opsForValue().get(String.format(IS_NULL_GOTO_SHORT_LINK_KEY, fullShortUrl));
 
         if(StrUtil.isNotBlank(isNullStr)){
+            ((HttpServletResponse) response).sendRedirect("/page/notfound");
             return;
         }
 
@@ -195,6 +198,8 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
                 ShortlinkGotoDO shortlinkGotoDO = shortlinkGotoMapper.selectOne(linkGotoQueryWrapper);
                 if(shortlinkGotoDO == null) {
                     stringRedisTemplate.opsForValue().set(String.format(IS_NULL_GOTO_SHORT_LINK_KEY,fullShortUrl), "-", 30, TimeUnit.MINUTES);
+                    ((HttpServletResponse) response).sendRedirect("/page/notfound");
+
                     return;
                 }
 
@@ -207,10 +212,12 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
                 ShortlinkDO shortlinkDO = shortlinkMapper.selectOne(shortlinkDOWrappers);
                 if(shortlinkDO != null) {
 
-                if(shortlinkDO.getValidDate() != null && shortlinkDO.getValidDate().before(new Date())){
-                    stringRedisTemplate.opsForValue().set(String.format(IS_NULL_GOTO_SHORT_LINK_KEY,fullShortUrl), "-", 30, TimeUnit.MINUTES);
-                    return;
-                }
+                    if(shortlinkDO.getValidDate() != null && shortlinkDO.getValidDate().before(new Date())){
+                        stringRedisTemplate.opsForValue().set(String.format(IS_NULL_GOTO_SHORT_LINK_KEY,fullShortUrl), "-", 30, TimeUnit.MINUTES);
+                        ((HttpServletResponse) response).sendRedirect("/page/notfound");
+
+                        return;
+                    }
                     stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),shortlinkDO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
                     ((HttpServletResponse) response).sendRedirect(shortlinkDO.getOriginUrl());
                 }
