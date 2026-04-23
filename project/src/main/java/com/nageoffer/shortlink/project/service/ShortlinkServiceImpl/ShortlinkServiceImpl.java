@@ -43,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.sql.Time;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,7 +94,7 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
             }
         }
 
-        stringRedisTemplate.opsForValue().set(fullShortUrl, shortlinkDO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
+        stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl), reqDTO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
         shortUrlCreateCachePenetrationBloomFilter.add(fullShortUrl);
         return ShortlinkCreateRespDTO.builder()
                 .fullShortUrl(shortlinkDO.getFullShortUrl())
@@ -205,7 +206,12 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
 
                 ShortlinkDO shortlinkDO = shortlinkMapper.selectOne(shortlinkDOWrappers);
                 if(shortlinkDO != null) {
-                    stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),shortlinkDO.getOriginUrl());
+
+                if(shortlinkDO.getValidDate() != null && shortlinkDO.getValidDate().before(new Date())){
+                    stringRedisTemplate.opsForValue().set(String.format(IS_NULL_GOTO_SHORT_LINK_KEY,fullShortUrl), "-", 30, TimeUnit.MINUTES);
+                    return;
+                }
+                    stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),shortlinkDO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
                     ((HttpServletResponse) response).sendRedirect(shortlinkDO.getOriginUrl());
                 }
 
