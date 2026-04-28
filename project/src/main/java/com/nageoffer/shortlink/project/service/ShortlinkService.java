@@ -24,4 +24,5 @@ public interface ShortlinkService extends IService<ShortlinkDO> {
     List<ShortlinkGroupCountQueryRespDTO> groupLinkCount(List<String> requestParam);
 
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException;
+
 }
