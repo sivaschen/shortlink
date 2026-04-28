@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
+import com.nageoffer.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkPageReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkUpdateReqDTO;
@@ -49,4 +50,8 @@ public interface ShortlinkRemoteService {
         HttpUtil.post("http://127.0.0.1:8002/api/short-link/v1/update", JSON.toJSONString(requestParam));
 
     };
+
+    default void  saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
+        HttpUtil.post("http://127.0.0.1:8002/api/short-link/v1/recycle-bin/save", JSON.toJSONString(requestParam));
+    }
 }

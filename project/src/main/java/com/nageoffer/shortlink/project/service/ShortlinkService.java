@@ -20,7 +20,7 @@ public interface ShortlinkService extends IService<ShortlinkDO> {
 
     public ShortlinkCreateRespDTO createShortlink(ShortlinkCreateReqDTO reqDTO);
     public void updateShortlink(ShortlinkUpdateReqDTO reqDTO);
-    IPage<ShortlinkPageRespDTO> pageShorlink(ShortlinkPageReqDTO requestParam);
+    IPage<ShortlinkPageRespDTO> pageShortlink(ShortlinkPageReqDTO requestParam);
     List<ShortlinkGroupCountQueryRespDTO> groupLinkCount(List<String> requestParam);
 
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException;

@@ -45,7 +45,7 @@ public class ShortlinkController {
     @GetMapping("/api/short-link/v1/page")
     public Result<IPage<ShortlinkPageRespDTO>> pageShortLink(ShortlinkPageReqDTO requestParam) {
 
-        return Results.success(shortlinkService.pageShorlink(requestParam));
+        return Results.success(shortlinkService.pageShortlink(requestParam));
     }
 
     @GetMapping("/api/short-link/v1/group_count")

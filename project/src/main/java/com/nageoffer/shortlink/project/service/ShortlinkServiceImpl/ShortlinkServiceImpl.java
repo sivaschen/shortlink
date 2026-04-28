@@ -205,7 +205,6 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
                 if(shortlinkGotoDO == null) {
                     stringRedisTemplate.opsForValue().set(String.format(IS_NULL_GOTO_SHORT_LINK_KEY,fullShortUrl), "-", 30, TimeUnit.MINUTES);
                     ((HttpServletResponse) response).sendRedirect("/page/notfound");
-
                     return;
                 }
 
@@ -216,18 +215,15 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
                         .eq(ShortlinkDO::getDelFlag, 0);
 
                 ShortlinkDO shortlinkDO = shortlinkMapper.selectOne(shortlinkDOWrappers);
-                if(shortlinkDO != null) {
+                if(shortlinkDO == null || (shortlinkDO.getValidDate() != null && shortlinkDO.getValidDate().before(new Date())) ) {
 
-                    if(shortlinkDO.getValidDate() != null && shortlinkDO.getValidDate().before(new Date())){
                         stringRedisTemplate.opsForValue().set(String.format(IS_NULL_GOTO_SHORT_LINK_KEY,fullShortUrl), "-", 30, TimeUnit.MINUTES);
                         ((HttpServletResponse) response).sendRedirect("/page/notfound");
 
                         return;
-                    }
-                    stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),shortlinkDO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
-                    ((HttpServletResponse) response).sendRedirect(shortlinkDO.getOriginUrl());
                 }
-
+                stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),shortlinkDO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
+                ((HttpServletResponse) response).sendRedirect(shortlinkDO.getOriginUrl());
 
             } finally{
                 rlock.unlock();
@@ -238,9 +234,10 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
 
     }
     @Override
-    public IPage<ShortlinkPageRespDTO> pageShorlink(ShortlinkPageReqDTO requestParam) {
+    public IPage<ShortlinkPageRespDTO> pageShortlink(ShortlinkPageReqDTO requestParam) {
 
-        LambdaQueryWrapper<ShortlinkDO> wrapper = Wrappers.lambdaQuery(ShortlinkDO.class).eq(ShortlinkDO::getGid, requestParam.getGid()).eq(ShortlinkDO::getDelFlag, 0)
+        LambdaQueryWrapper<ShortlinkDO> wrapper = Wrappers.lambdaQuery(ShortlinkDO.class)
+                .eq(ShortlinkDO::getGid, requestParam.getGid()).eq(ShortlinkDO::getDelFlag, 0)
                 .eq(ShortlinkDO::getEnableStatus, 0).orderByDesc(ShortlinkDO::getCreateTime);
 
         IPage<ShortlinkDO> resultPage = baseMapper.selectPage(requestParam,wrapper);
