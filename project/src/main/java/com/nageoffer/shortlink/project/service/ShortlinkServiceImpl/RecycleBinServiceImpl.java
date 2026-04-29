@@ -10,6 +10,7 @@ import com.nageoffer.shortlink.project.dao.entity.ShortlinkDO;
 import com.nageoffer.shortlink.project.dao.mapper.ShortlinkMapper;
 import com.nageoffer.shortlink.project.dto.req.RecycleBinSaveReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkPageReqDTO;
+import com.nageoffer.shortlink.project.dto.req.ShortlinkRecyleBinPageReqDTO;
 import com.nageoffer.shortlink.project.dto.resp.ShortlinkPageRespDTO;
 import com.nageoffer.shortlink.project.service.RecycleBinService;
 import com.nageoffer.shortlink.project.toolkit.LinkUtil;
@@ -48,10 +49,10 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlin
     }
 
     @Override
-    public IPage<ShortlinkPageRespDTO> recycleBinPageShortlink(ShortlinkPageReqDTO requestParam) {
+    public IPage<ShortlinkPageRespDTO> recycleBinPageShortlink(ShortlinkRecyleBinPageReqDTO requestParam) {
 
         LambdaQueryWrapper<ShortlinkDO> wrapper = Wrappers.lambdaQuery(ShortlinkDO.class)
-                .eq(ShortlinkDO::getGid, requestParam.getGid()).eq(ShortlinkDO::getDelFlag, 0)
+                .in(ShortlinkDO::getGid, requestParam.getGids()).eq(ShortlinkDO::getDelFlag, 0)
                 .eq(ShortlinkDO::getEnableStatus, 1).orderByDesc(ShortlinkDO::getCreateTime);
 
         IPage<ShortlinkDO> resultPage = baseMapper.selectPage(requestParam,wrapper);

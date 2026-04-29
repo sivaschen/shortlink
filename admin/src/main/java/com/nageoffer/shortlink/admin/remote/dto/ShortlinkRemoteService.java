@@ -5,10 +5,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
-import com.nageoffer.shortlink.admin.remote.dto.req.RecycleBinSaveReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkCreateReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkPageReqDTO;
-import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkUpdateReqDTO;
+import com.nageoffer.shortlink.admin.remote.dto.req.*;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkCreateRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkPageRespDTO;
@@ -53,5 +50,15 @@ public interface ShortlinkRemoteService {
 
     default void  saveRecycleBin(RecycleBinSaveReqDTO requestParam) {
         HttpUtil.post("http://127.0.0.1:8002/api/short-link/v1/recycle-bin/save", JSON.toJSONString(requestParam));
+    }
+
+    default Result<IPage<ShortlinkPageRespDTO>> recycleBinPageShortLink(ShortlinkRecycleBinPageReqDTO requestParam){
+        Map<String ,Object> requestMap = new HashMap<>();
+        requestMap.put("gids", requestParam.getGids());
+        requestMap.put("current", requestParam.getCurrent());
+        requestMap.put("size", requestParam.getSize());
+        String resultPgaeStr = HttpUtil.get("http://127.0.0.1:8002/api/short-link/v1/recycle-bin/page", requestMap);
+        return JSON.parseObject(resultPgaeStr, new TypeReference<>() {
+        });
     }
 }
