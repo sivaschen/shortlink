@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.nageoffer.shortlink.admin.common.biz.user.UserContext;
+import com.nageoffer.shortlink.admin.common.convention.exception.ClientException;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.dao.entity.GroupDO;
 import com.nageoffer.shortlink.admin.dao.mapper.GroupMapper;
@@ -32,8 +33,8 @@ public class RecycleBinServiceImpl implements RecycleBinService {
                 .eq(GroupDO::getDelFlag, 0);
 
         List<GroupDO> groupDOList = groupMapper.selectList(queryWrapper);
-        if(CollUtil.isNotEmpty(groupDOList)) {
-
+        if(CollUtil.isEmpty(groupDOList)) {
+            throw new ClientException("分子为空");
         }
         requestParam.setGids(groupDOList.stream().map(GroupDO::getGid).toList());
         return shortlinkRemoteService.recycleBinPageShortLink(requestParam);
