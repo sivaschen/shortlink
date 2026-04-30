@@ -1,6 +1,8 @@
 package com.nageoffer.shortlink.project.service.ShortlinkServiceImpl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.Week;
 import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -16,8 +18,10 @@ import com.nageoffer.shortlink.project.common.enums.ValidDateType;
 import com.nageoffer.shortlink.project.config.RBloomFilterConfiguration;
 import com.nageoffer.shortlink.project.dao.entity.ShortlinkDO;
 import com.nageoffer.shortlink.project.dao.entity.ShortlinkGotoDO;
+import com.nageoffer.shortlink.project.dao.entity.ShortlinkStatsDO;
 import com.nageoffer.shortlink.project.dao.mapper.ShortlinkGotoMapper;
 import com.nageoffer.shortlink.project.dao.mapper.ShortlinkMapper;
+import com.nageoffer.shortlink.project.dao.mapper.ShortlinkStatsMapper;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkCreateReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkGroupCountQueryReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkPageReqDTO;
@@ -66,6 +70,8 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
     private final ShortlinkGotoMapper shortlinkGotoMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
+    private final ShortlinkStatsMapper shortlinkStatsMapper;
+
     @Override
     public ShortlinkCreateRespDTO createShortlink(ShortlinkCreateReqDTO reqDTO) {
         String suffix = generateSuffix(reqDTO);
@@ -168,6 +174,7 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
 
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if(StrUtil.isNotBlank(originalLink)){
+            shortlinkStats(fullShortUrl,null,  request, response);
             ((HttpServletResponse) response).sendRedirect(originalLink);
             return;
         }
@@ -223,6 +230,7 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
                         return;
                 }
                 stringRedisTemplate.opsForValue().set(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl),shortlinkDO.getOriginUrl(), LinkUtil.getLinkCacheValidTime(shortlinkDO.getValidDate()), TimeUnit.MILLISECONDS);
+                shortlinkStats(fullShortUrl,shortlinkDO.getGid(),  request, response);
                 ((HttpServletResponse) response).sendRedirect(shortlinkDO.getOriginUrl());
 
             } finally{
@@ -232,6 +240,34 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
 
 
 
+    }
+    void shortlinkStats(String fullShortUrl, String gid, ServletRequest request, ServletResponse response) {
+
+
+        if(StrUtil.isBlank(gid)){
+            LambdaQueryWrapper<ShortlinkGotoDO> linkGotoQueryWrapper = Wrappers.lambdaQuery(ShortlinkGotoDO.class)
+                    .eq(ShortlinkGotoDO::getFullShortUrl, fullShortUrl);
+
+
+            ShortlinkGotoDO shortlinkGotoDO = shortlinkGotoMapper.selectOne(linkGotoQueryWrapper);
+            gid = shortlinkGotoDO.getGid();
+        }
+
+        int hour = DateUtil.hour(new Date(), true);
+        Week week = DateUtil.dayOfWeekEnum(new Date());
+        int day = week.getValue();
+        ShortlinkStatsDO shortlinkStatsDO = ShortlinkStatsDO
+                .builder()
+                .gid(gid)
+                .hour(hour)
+                .weekday(day)
+                .pv(1)
+                .uv(1)
+                .uip(1)
+                .fullShortUrl(fullShortUrl)
+                .date(new Date())
+                .build();
+        shortlinkStatsMapper.uploadShortlintStats(shortlinkStatsDO);
     }
     @Override
     public IPage<ShortlinkPageRespDTO> pageShortlink(ShortlinkPageReqDTO requestParam) {
