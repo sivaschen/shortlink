@@ -11,4 +11,7 @@ public class RedisKeyConstant {
     public static final String IS_NULL_GOTO_SHORT_LINK_KEY = "short-link_is-null_lock_goto_%s";
 
 
+
+
+
 }

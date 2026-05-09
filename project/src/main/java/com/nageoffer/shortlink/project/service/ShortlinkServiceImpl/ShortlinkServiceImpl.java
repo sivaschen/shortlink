@@ -7,6 +7,9 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.text.StrBuilder;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -18,12 +21,8 @@ import com.nageoffer.shortlink.project.common.convention.exception.ClientExcepti
 import com.nageoffer.shortlink.project.common.convention.exception.ServiceException;
 import com.nageoffer.shortlink.project.common.enums.ValidDateType;
 import com.nageoffer.shortlink.project.config.RBloomFilterConfiguration;
-import com.nageoffer.shortlink.project.dao.entity.ShortlinkDO;
-import com.nageoffer.shortlink.project.dao.entity.ShortlinkGotoDO;
-import com.nageoffer.shortlink.project.dao.entity.ShortlinkStatsDO;
-import com.nageoffer.shortlink.project.dao.mapper.ShortlinkGotoMapper;
-import com.nageoffer.shortlink.project.dao.mapper.ShortlinkMapper;
-import com.nageoffer.shortlink.project.dao.mapper.ShortlinkStatsMapper;
+import com.nageoffer.shortlink.project.dao.entity.*;
+import com.nageoffer.shortlink.project.dao.mapper.*;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkCreateReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkGroupCountQueryReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkPageReqDTO;
@@ -39,7 +38,9 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jodd.util.StringUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -59,8 +60,10 @@ import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.nageoffer.shortlink.project.common.constant.RedisKeyConstant.*;
+import static com.nageoffer.shortlink.project.common.constant.ShortlinkConstant.AMAP_KEY_URL;
 
 
 @Slf4j
@@ -73,6 +76,15 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final ShortlinkStatsMapper shortlinkStatsMapper;
+    private final LinkLocaleStatsMapper linkLocaleStatsMapper;
+    private final LinkOSStatsMapper linkOSStatsMapper;
+    private final LinkBrowserStatsMapper linkBrowserMapper;
+    private final LinkDeviceStatsMapper linkDeviceMapper;
+    private final LinkNetworkStatsMapper linkNetworkMapper;
+    private final LinkAccessLogsMapper linkAccessLogsMapper;
+
+    @Value("${short-link.stats.locale.amap-key}")
+    private String amapStatsKey;
 
     @Override
     public ShortlinkCreateRespDTO createShortlink(ShortlinkCreateReqDTO reqDTO) {
@@ -247,19 +259,21 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
 
         Cookie[] cookies = ((HttpServletRequest) request).getCookies();
         AtomicBoolean uvFirstFlag = new AtomicBoolean();
+        AtomicReference<String> uv =  new AtomicReference<>();
         Runnable setCookieTask = () -> {
-            String cookie_str = UUID.fastUUID().toString();
-            Cookie cookie = new Cookie("uv", cookie_str);
+            uv.set(UUID.fastUUID().toString());
+            Cookie cookie = new Cookie("uv", uv.get());
             cookie.setPath(StrUtil.sub(fullShortUrl,fullShortUrl.indexOf("/"), fullShortUrl.length()));
             cookie.setMaxAge(30*24*60*60);
             ((HttpServletResponse) response).addCookie(cookie);
             uvFirstFlag.set(true);
-            stringRedisTemplate.opsForSet().add("short-link_uv:stats" + fullShortUrl, cookie_str);
+            stringRedisTemplate.opsForSet().add("short-link_uv:stats" + fullShortUrl, uv.get());
 
         };
         if(ArrayUtil.isNotEmpty(cookies) ){
             Arrays.stream(cookies).filter(item -> Objects.equals(item.getName(), "uv")).findFirst()
                     .map(Cookie::getValue).ifPresentOrElse(each -> {
+                        uv.set(each);
                         long added = stringRedisTemplate.opsForSet().add("short-link_uv:stats" + fullShortUrl, each);
                         uvFirstFlag.set(added > 0L);
                         }, setCookieTask);
@@ -298,6 +312,77 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
                 .date(new Date())
                 .build();
         shortlinkStatsMapper.uploadShortlintStats(shortlinkStatsDO);
+        Map<String,Object> map =  new HashMap<>();
+        map.put("ip",ip );
+        map.put("key", amapStatsKey);
+        String stringResult = HttpUtil.get(AMAP_KEY_URL, map);
+        JSONObject mapObj = JSON.parseObject(stringResult);
+        String infoCode = mapObj.getString("infocode");
+        if(StrUtil.isNotBlank(infoCode) && StrUtil.equals(infoCode, "10000")){
+            String province = mapObj.getString("province");
+            boolean localeFlagNull = StringUtil.equals(province, "[]");
+            String city = mapObj.getString("city");
+            String adcode = mapObj.getString("adcode");
+        LinkLocaleStatsDO linkLocaleStatsDO = LinkLocaleStatsDO.builder()
+                .gid(gid)
+                .date(new Date())
+                .cnt(1)
+                .city(localeFlagNull ? "未知" : city)
+                .country("中国")
+                .adcode(localeFlagNull ? "未知" : adcode)
+                .province(localeFlagNull ? "未知" : province)
+                .fullShortUrl(fullShortUrl)
+                .build();
+            linkLocaleStatsMapper.uploadLinkLocaleStats(linkLocaleStatsDO);
+        };
+
+        LinkOSStatsDO linkOSStatsDO = LinkOSStatsDO.builder()
+                .fullShortUrl(fullShortUrl)
+                .gid(gid)
+                .date(new Date())
+                .cnt(1)
+                .os("mac")
+                .build();
+        linkOSStatsMapper.uploadLinkOSStats(linkOSStatsDO);
+
+        LinkBrowserStatsDO linkBrowserStatsDO = LinkBrowserStatsDO.builder()
+                .fullShortUrl(fullShortUrl)
+                .gid(gid)
+                .date(new Date())
+                .cnt(1)
+                .browser("edge").
+                build();
+        linkBrowserMapper.uploadLinkBrowserStats(linkBrowserStatsDO);
+
+        LinkDeviceStatsDO linkDeviceStatsDO = LinkDeviceStatsDO.builder()
+                .fullShortUrl(fullShortUrl)
+                .gid(gid)
+                .date(new Date())
+                .cnt(1)
+                .device("pc").
+                build();
+        linkDeviceMapper.uploadLinkDeviceStats(linkDeviceStatsDO);
+        LinkNetworkStatsDO linkNetworkStatsDO = LinkNetworkStatsDO.builder()
+                .fullShortUrl(fullShortUrl)
+                .gid(gid)
+                .date(new Date())
+                .cnt(1)
+                .network("edge").
+                build();
+        linkNetworkMapper.uploadLinkNetworkStats(linkNetworkStatsDO);
+        LinkAccessLogsDO linkAccessLogsDO = LinkAccessLogsDO.builder()
+                .fullShortUrl(fullShortUrl)
+                .gid(gid)
+                .ip(ip)
+                .user(uv.get())
+                .os("mac")
+                .network("wifi")
+                .device("pc")
+                .locale("中国-广东")
+                .browser("edge")
+                .build();
+        linkAccessLogsMapper.insert(linkAccessLogsDO);
+
     }
     @Override
     public IPage<ShortlinkPageRespDTO> pageShortlink(ShortlinkPageReqDTO requestParam) {
