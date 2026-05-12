@@ -15,8 +15,14 @@ spring:
       prefix: /templates/
       suffix: .html
 short-link:
+  domain:
+    default: nurl.ink:8002
   stats:
     locale:
       amap-key: d193a342967deb0a6b96865292fd4e48
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/*.xml
 
 

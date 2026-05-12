@@ -86,14 +86,17 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
     @Value("${short-link.stats.locale.amap-key}")
     private String amapStatsKey;
 
+    @Value("${short-link.domain.default}")
+    private String defaultDomain;
+
     @Override
     public ShortlinkCreateRespDTO createShortlink(ShortlinkCreateReqDTO reqDTO) {
         String suffix = generateSuffix(reqDTO);
-        String fullShortUrl = StrBuilder.create(reqDTO.getDomain())
+        String fullShortUrl = StrBuilder.create(defaultDomain)
                 .append("/")
                 .append(suffix).toString();
         ShortlinkDO shortlinkDO = BeanUtil.toBean(reqDTO, ShortlinkDO.class);
-        shortlinkDO.setFullShortUrl(reqDTO.getDomain() + "/" +suffix );
+        shortlinkDO.setFullShortUrl(defaultDomain + "/" +suffix );
         shortlinkDO.setShortUri(suffix);
         shortlinkDO.setEnableStatus(0);
         shortlinkDO.setFavicon(getUrlIcon(reqDTO.getOriginUrl()));
@@ -183,8 +186,9 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
     @Override
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException {
         String serverName = request.getServerName();
-        String fullShortUrl = serverName + "/" + shortUri;
-
+        String serverPort = Optional.of(request.getServerPort()).filter(each -> !Objects.equals(each, 80)).
+                map(String::valueOf).map(each -> ":" + each).orElse("");
+        String fullShortUrl = serverName + serverPort  + "/" + shortUri;
 
         String originalLink = stringRedisTemplate.opsForValue().get(String.format(GOTO_SHORT_LINK_KEY, fullShortUrl));
         if(StrUtil.isNotBlank(originalLink)){
@@ -387,12 +391,7 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
     @Override
     public IPage<ShortlinkPageRespDTO> pageShortlink(ShortlinkPageReqDTO requestParam) {
 
-        LambdaQueryWrapper<ShortlinkDO> wrapper = Wrappers.lambdaQuery(ShortlinkDO.class)
-                .eq(ShortlinkDO::getGid, requestParam.getGid()).eq(ShortlinkDO::getDelFlag, 0)
-                .eq(ShortlinkDO::getEnableStatus, 0).orderByDesc(ShortlinkDO::getCreateTime);
-
-        IPage<ShortlinkDO> resultPage = baseMapper.selectPage(requestParam,wrapper);
-
+        IPage<ShortlinkDO> resultPage = baseMapper.pageLink(requestParam);
 
         return resultPage.convert(item -> BeanUtil.toBean(item, ShortlinkPageRespDTO.class));
     }

@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.nageoffer.shortlink.project.common.convention.result.Result;
 import com.nageoffer.shortlink.project.common.convention.result.Results;
 import com.nageoffer.shortlink.project.dto.req.*;
-import com.nageoffer.shortlink.project.dto.resp.ShortlinkCreateRespDTO;
-import com.nageoffer.shortlink.project.dto.resp.ShortlinkGroupCountQueryRespDTO;
-import com.nageoffer.shortlink.project.dto.resp.ShortlinkPageRespDTO;
-import com.nageoffer.shortlink.project.dto.resp.ShortlinkStatsRespDTO;
+import com.nageoffer.shortlink.project.dto.resp.*;
 import com.nageoffer.shortlink.project.service.ShortlinkService;
 import com.nageoffer.shortlink.project.service.ShortlinkStatsService;
 import jakarta.servlet.ServletRequest;
@@ -56,5 +53,20 @@ public class ShortlinkController {
     @GetMapping("/api/short-link/v1/stats")
     public Result<ShortlinkStatsRespDTO> getShortlinkStats(ShortlinkStatsReqDTO requestParam) {
         return Results.success(shortlinkStatsService.getShortlinkStats(requestParam));
+    }
+
+    @GetMapping("/api/short-link/v1/stats/group")
+    public Result<ShortlinkStatsRespDTO> getGroupShortlinkStats(ShortlinkStatsByGroupReqDTO requestParam) {
+        return Results.success(shortlinkStatsService.getShortlinkStatsByGroup(requestParam));
+    }
+
+    @GetMapping("/api/short-link/v1/stats/access-reocrd")
+    public Result<IPage<ShortLinkStatsAccessRecordRespDTO>> getShortlinkStatsAccessRecord(ShortlinkStatsAccessRecordReqDTO requestParam) {
+        return Results.success(shortlinkStatsService.getShortlinkStatsAccessRecord(requestParam));
+    }
+
+    @GetMapping("/api/short-link/v1/stats/access-reocrd/group")
+    public Result<IPage<ShortLinkStatsAccessRecordRespDTO>> getShortlinkStatsAccessRecordByGroup(ShortlinkStatsAccessRecordByGroupReqDTO requestParam) {
+        return Results.success(shortlinkStatsService.getShortlinkStatsAccessRecordByGroup(requestParam));
     }
 }

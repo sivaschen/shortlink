@@ -61,4 +61,12 @@ public class ShortlinkPageRespDTO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
     private String favicon;
+
+    private Integer totalPv;
+    private Integer totalUv;
+    private Integer totalUip;
+
+    private Integer todayPv;
+    private Integer todayUv;
+    private Integer todayUip;
 }
