@@ -2,8 +2,10 @@ package com.nageoffer.shortlink.project.toolkit;
 
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.StrUtil;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.net.URI;
 import java.util.Date;
 import java.util.Optional;
 
@@ -42,4 +44,19 @@ public class LinkUtil {
 
         return ipAddress;
         }
+    public static String extractDomain(String url) {
+        String domain = null;
+        try {
+            URI uri = new URI(url);
+            String host = uri.getHost();
+            if (StrUtil.isNotBlank(host)) {
+                domain = host;
+                if (domain.startsWith("www.")) {
+                    domain = host.substring(4);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return domain;
+    }
     }

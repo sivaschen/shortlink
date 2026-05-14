@@ -3,6 +3,7 @@ package com.nageoffer.shortlink.project.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.nageoffer.shortlink.project.dao.entity.ShortlinkDO;
+import com.nageoffer.shortlink.project.dto.biz.ShortlinkStatsRecordDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkCreateReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkGroupCountQueryReqDTO;
 import com.nageoffer.shortlink.project.dto.req.ShortlinkPageReqDTO;
@@ -24,5 +25,5 @@ public interface ShortlinkService extends IService<ShortlinkDO> {
     List<ShortlinkGroupCountQueryRespDTO> groupLinkCount(List<String> requestParam);
 
     public void restoreUrl(String shortUri, ServletRequest request, ServletResponse response) throws IOException;
-
+    void shortLinkStats(String fullShortUrl, String gid, ShortlinkStatsRecordDTO shortLinkStatsRecord);
 }

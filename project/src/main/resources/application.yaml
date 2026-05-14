@@ -15,6 +15,14 @@ spring:
       prefix: /templates/
       suffix: .html
 short-link:
+  goto-domain:
+    whilte-list:
+      enable: true
+      names: '拿个offer, 知乎，掘金'
+      details:
+        - nageoffer.com
+        - zhihu.com
+        - juejin.com
   domain:
     default: nurl.ink:8002
   stats:

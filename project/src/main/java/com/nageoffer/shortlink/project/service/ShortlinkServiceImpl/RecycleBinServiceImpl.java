@@ -81,9 +81,12 @@ public class RecycleBinServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlin
         LambdaUpdateWrapper<ShortlinkDO> updateWrapper = Wrappers.lambdaUpdate(ShortlinkDO.class)
                 .eq(ShortlinkDO::getGid, requestParam.getGid())
                 .eq(ShortlinkDO::getFullShortUrl, requestParam.getFullShortUrl())
-                .eq(ShortlinkDO::getEnableStatus, 0)
+                .eq(ShortlinkDO::getEnableStatus, 1)
+                .eq(ShortlinkDO::getDelTime, 0L)
                 .eq(ShortlinkDO::getDelFlag, 0);
-
-        baseMapper.delete(updateWrapper);
+        ShortlinkDO delShortlinkDO = ShortlinkDO.builder().delTime(System.currentTimeMillis()).build();
+        delShortlinkDO.setDelFlag(1);
+//        baseMapper.delete(updateWrapper);
+        baseMapper.update(delShortlinkDO, updateWrapper);
     }
 }

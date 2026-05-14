@@ -14,6 +14,12 @@ public class ShortlinkUpdateReqDTO {
      */
     private String originUrl;
 
+
+    /**
+     * 旧的gid
+     */
+    private String originGid;
+
     /**
      * 分组标识
      */
