@@ -567,7 +567,7 @@ try {
             };
             originalUrl+=originalUrl+System.currentTimeMillis();
             shortUrl = HashUtil.hashToBase62(originalUrl);
-            if(shortUrlCreateCachePenetrationBloomFilter.contains(reqDTO.getDomain() + "/" + shortUrl)){
+            if(shortUrlCreateCachePenetrationBloomFilter.contains(defaultDomain + "/" + shortUrl)){
                 System.out.println("重新生成中");
                 generateCount++;
             } else {
