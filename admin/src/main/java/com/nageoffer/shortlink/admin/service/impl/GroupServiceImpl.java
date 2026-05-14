@@ -1,11 +1,14 @@
 package com.nageoffer.shortlink.admin.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nageoffer.shortlink.admin.common.biz.user.UserContext;
+import com.nageoffer.shortlink.admin.common.convention.exception.ClientException;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.dao.entity.GroupDO;
 import com.nageoffer.shortlink.admin.dao.mapper.GroupMapper;
@@ -16,17 +19,32 @@ import com.nageoffer.shortlink.admin.remote.dto.ShortlinkRemoteService;
 import com.nageoffer.shortlink.admin.remote.dto.resp.ShortlinkGroupCountQueryRespDTO;
 import com.nageoffer.shortlink.admin.service.GroupService;
 import com.nageoffer.shortlink.admin.toolkit.RandomStringUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.Redisson;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.nageoffer.shortlink.admin.common.constant.RedisCacheConstant.LOCK_GROUP_SAVE_KEY;
+
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implements GroupService {
+
+
+    private final RedissonClient redissonClient;
+
+
+    @Value("${short-link.group.max-num}")
+    private Integer maxGroupNum;
 
     ShortlinkRemoteService shortlinkRemoteService = new ShortlinkRemoteService() {
     };
@@ -37,16 +55,31 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, GroupDO> implemen
     }
     @Override
     public void saveGroup(String username, String groupName) {
-        String gid;
-        do{
-            gid = RandomStringUtil.generate6CharString();
-        } while (!gidAvailable(username,gid));
 
-        GroupDO groupDO = GroupDO.builder().gid(gid).username(username).sortOrder(0).name(groupName).build();
+        RLock lock = redissonClient.getLock(LOCK_GROUP_SAVE_KEY);
 
 
+        lock.lock();
+        try {
 
-        baseMapper.insert(groupDO);
+            LambdaQueryWrapper<GroupDO> queryMapper = Wrappers.lambdaQuery(GroupDO.class)
+                    .eq(GroupDO::getUsername, username)
+                    .eq(GroupDO::getDelFlag, 0);
+            List<GroupDO> groupDOS = baseMapper.selectList(queryMapper);
+            if(CollUtil.isNotEmpty(groupDOS) &&  groupDOS.size() == maxGroupNum) {
+                throw new ClientException(String.format("分组数量超过%d", maxGroupNum));
+            }
+            String gid;
+            do{
+                gid = RandomStringUtil.generate6CharString();
+            } while (!gidAvailable(username,gid));
+
+            GroupDO groupDO = GroupDO.builder().gid(gid).username(username).sortOrder(0).name(groupName).build();
+            baseMapper.insert(groupDO);
+        } finally {
+            lock.unlock();
+        }
+
     }
     private boolean gidAvailable(String username, String gid) {
         LambdaQueryWrapper<GroupDO> wrapper =  Wrappers.lambdaQuery(GroupDO.class).eq(GroupDO::getGid, gid)
