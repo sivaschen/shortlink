@@ -14,7 +14,8 @@ short-link:
   group:
     max-num: 20
   flow-limit:
-    time-window: 1
+    enable: true
+    time-window: 50
     max-access-count: 2
 
 
