@@ -8,9 +8,11 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.nageoffer.shortlink.project.common.convention.exception.ServiceException;
 import com.nageoffer.shortlink.project.dao.entity.*;
 import com.nageoffer.shortlink.project.dao.mapper.*;
 import com.nageoffer.shortlink.project.dto.biz.ShortlinkStatsRecordDTO;
+import com.nageoffer.shortlink.project.mq.idempotent.MessageQueueIdempotent;
 import com.nageoffer.shortlink.project.mq.producer.DelayShortlinkStatsProducer;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +49,7 @@ public class ShortlinkStatsSaveConsumer implements StreamListener<String, MapRec
     private final LinkTodayStatsMapper linkStatsTodayMapper;
     private final DelayShortlinkStatsProducer delayShortLinkStatsProducer;
     private final StringRedisTemplate stringRedisTemplate;
+    private final MessageQueueIdempotent messageQueueIdempotent;
 
     @Value("${short-link.stats.locale.amap-key}")
     private String amapStatsKey;
@@ -57,12 +60,30 @@ public class ShortlinkStatsSaveConsumer implements StreamListener<String, MapRec
         RecordId id = message.getId();
         Map<String, String> producerMap = message.getValue();
         String fullShortUrl = producerMap.get("fullShortUrl");
-        if (StrUtil.isNotBlank(fullShortUrl)) {
-            String gid = producerMap.get("gid");
-            ShortlinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortlinkStatsRecordDTO.class);
-            actualSaveShortLinkStats(fullShortUrl, gid, statsRecord);
+        if(!messageQueueIdempotent.isMessageProcessed(id.toString())) {
+            if(messageQueueIdempotent.isAccomplished(id.toString())) {
+                return;
+            }
+
+            throw new ServiceException("未消费结束，请重发送");
         }
-        stringRedisTemplate.opsForStream().delete(Objects.requireNonNull(stream), id.getValue());
+
+        try {
+            if (StrUtil.isNotBlank(fullShortUrl)) {
+                String gid = producerMap.get("gid");
+                ShortlinkStatsRecordDTO statsRecord = JSON.parseObject(producerMap.get("statsRecord"), ShortlinkStatsRecordDTO.class);
+                actualSaveShortLinkStats(fullShortUrl, gid, statsRecord);
+            }
+            stringRedisTemplate.opsForStream().delete(Objects.requireNonNull(stream), id.getValue());
+        } catch (Throwable th) {
+            messageQueueIdempotent.deleteMessageId(id.toString());
+            log.error("消费异常");
+
+        }
+
+        messageQueueIdempotent.setAccomplished(id.toString());
+
+
     }
 
     public void actualSaveShortLinkStats(String fullShortUrl, String gid, ShortlinkStatsRecordDTO statsRecord) {
