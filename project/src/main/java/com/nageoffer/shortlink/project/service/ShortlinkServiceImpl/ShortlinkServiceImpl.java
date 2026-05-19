@@ -453,7 +453,7 @@ public class ShortlinkServiceImpl extends ServiceImpl<ShortlinkMapper, Shortlink
             if(generateCount == 10) {
                 throw new ServiceException("短链接频繁生产，请稍后重试");
             };
-            originalUrl+=originalUrl+System.currentTimeMillis();
+            originalUrl+= UUID.randomUUID().toString();
             shortUrl = HashUtil.hashToBase62(originalUrl);
             if(shortUrlCreateCachePenetrationBloomFilter.contains(defaultDomain + "/" + shortUrl)){
                 System.out.println("重新生成中");
