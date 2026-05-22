@@ -7,7 +7,6 @@ import com.nageoffer.shortlink.admin.dto.req.GroupOrderReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.ShortLinkSaveGroupReqDTO;
 import com.nageoffer.shortlink.admin.dto.req.ShortLinkUpdateReqDTO;
 import com.nageoffer.shortlink.admin.dto.resp.GroupRespDTO;
-import com.nageoffer.shortlink.admin.remote.dto.ShortlinkRemoteService;
 import com.nageoffer.shortlink.admin.service.GroupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

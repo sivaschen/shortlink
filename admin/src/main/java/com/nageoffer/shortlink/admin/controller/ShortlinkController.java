@@ -1,10 +1,10 @@
 package com.nageoffer.shortlink.admin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nageoffer.shortlink.admin.common.convention.result.Result;
 import com.nageoffer.shortlink.admin.common.convention.result.Results;
 import com.nageoffer.shortlink.admin.remote.ShortlinkActualRemoteService;
-import com.nageoffer.shortlink.admin.remote.dto.ShortlinkRemoteService;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkCreateReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkPageReqDTO;
 import com.nageoffer.shortlink.admin.remote.dto.req.ShortlinkUpdateReqDTO;
@@ -21,11 +21,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ShortlinkController {
 
-    ShortlinkRemoteService shortlinkRemoteService = new ShortlinkRemoteService(){};
     private final ShortlinkActualRemoteService shortlinkActualRemoteService;
     @GetMapping("/api/short-link/admin/v1/page")
-    public Result<IPage<ShortlinkPageRespDTO>> pageShortLink(ShortlinkPageReqDTO requestParam) {
-        return (shortlinkRemoteService.pageShortLink(requestParam));
+    public Result<Page<ShortlinkPageRespDTO>> pageShortLink(ShortlinkPageReqDTO requestParam) {
+        return shortlinkActualRemoteService.pageShortLink(
+                requestParam.getGid(),
+                requestParam.getOrderTag(),
+                requestParam.getCurrent(),
+                requestParam.getSize()
+        );
     }
 
     @PostMapping("/api/short-link/admin/v1/create")
@@ -35,12 +39,11 @@ public class ShortlinkController {
 
     @GetMapping("/api/short-link/admin/v1/group_count")
     public Result<List<ShortlinkGroupCountQueryRespDTO>> groupCount(@RequestParam List<String> requestParam) {
-        return shortlinkRemoteService.listGroupCount(requestParam);
+        return shortlinkActualRemoteService.listGroupCount(requestParam);
     }
     @PostMapping("/api/short-link/admin/v1/update")
     public Result<Void> updateShortlink(@RequestBody ShortlinkUpdateReqDTO requestParam) {
-        shortlinkRemoteService.updateShortlink(requestParam);
-
+        shortlinkActualRemoteService.updateShortlink(requestParam);
         return Results.success();
     }
 }

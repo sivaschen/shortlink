@@ -78,7 +78,7 @@ public class ShortlinkStatsSaveConsumer implements StreamListener<String, MapRec
         } catch (Throwable th) {
             messageQueueIdempotent.deleteMessageId(id.toString());
             log.error("消费异常");
-
+            throw th;
         }
 
         messageQueueIdempotent.setAccomplished(id.toString());
